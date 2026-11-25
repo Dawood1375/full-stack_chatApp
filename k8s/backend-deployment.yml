@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: chat-app
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: dawoodashraf/chatapp-backend:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5001
+          envFrom:
+            - configMapRef:
+                name: chatapp-config
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chatapp-secret
+                  key: JWT_SECRET
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: chatapp-secret
+                  key: MONGODB_URI
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: chatapp-secret
+                  key: CLOUDINARY_CLOUD_NAME
+                  optional: true
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: chatapp-secret
+                  key: CLOUDINARY_API_KEY
+                  optional: true
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chatapp-secret
+                  key: CLOUDINARY_API_SECRET
+                  optional: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
